@@ -1,16 +1,15 @@
 package com.opentok.android.meet;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
-import org.json.JSONException;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -38,20 +37,18 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 
 import com.opentok.android.OpenTokConfig;
 import com.opentok.android.Publisher;
-import com.opentok.android.meet.fragments.PublisherControlFragment;
 import com.opentok.android.meet.services.ClearNotificationService;
 import com.opentok.android.meet.services.ClearNotificationService.ClearBinder;
 
 import meet.android.opentok.com.opentokmeet.R;
 
 
-public class ChatRoomActivity extends Activity implements PublisherControlFragment.PublisherCallbacks {
+public class ChatRoomActivity extends Activity  {
 
     private static final String LOGTAG = ChatRoomActivity.class.getName();
 
@@ -69,7 +66,6 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
     private Publisher.CameraCaptureFrameRate mCapturerFpsPub = Publisher.CameraCaptureFrameRate.FPS_30;
 
     private ProgressDialog mConnectingDialog;
-    private AlertDialog mErrorDialog;
 
     private Handler mHandler = new Handler();
     private NotificationCompat.Builder mNotifyBuilder;
@@ -86,8 +82,6 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
     private String pubInfoStats;
 
     public ArrayList<String> statsInfo = new ArrayList<>() ;
-
-    private PublisherControlFragment mPublisherFragment;
     private   ProgressDialog dialog;
 
 
@@ -101,15 +95,17 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
 
         setContentView(R.layout.chat_room_layout);
 
-        //Custom title bar
-        ActionBar actionBar = getActionBar();
-        actionBar.setDisplayShowTitleEnabled(false);
-        actionBar.setDisplayUseLogoEnabled(false);
-        actionBar.setDisplayHomeAsUpEnabled(true);
-        actionBar.setDisplayShowCustomEnabled(true);
-
-        View cView = getLayoutInflater().inflate(R.layout.custom_title, null);
-        actionBar.setCustomView(cView);
+        // customize title bar (Lint warns if actionbar is null although that should never happen)
+        if (null != getActionBar()) {
+            ActionBar actionBar = getActionBar();
+            actionBar.setDisplayShowTitleEnabled(false);
+            actionBar.setDisplayUseLogoEnabled(false);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setDisplayShowCustomEnabled(true);
+            @SuppressLint("InflateParams")
+            View cView = getLayoutInflater().inflate(R.layout.custom_title, null);
+            actionBar.setCustomView(cView);
+        }
 
         mPreview = (ViewGroup) findViewById(R.id.publisherview);
         mParticipantsView = (LinearLayout) findViewById(R.id.gallery);
@@ -142,68 +138,31 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
 
         String framerate =  getIntent().getStringExtra(PUB_CAPTURER_FPS);
         mCapturerFpsPub = getPubCapturerFrameRate(framerate);
-
-        if (savedInstanceState == null) {
-            initPublisherFragment();
-            initPublisherFragment();
-        }
-
-        mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         initializeRoom();
 
     }
 
-    private Publisher.CameraCaptureResolution getPubCapturerResolution(String resolution){
-        Publisher.CameraCaptureResolution capturerResolution;
-
-        if (resolution.contains("Low")){
-            capturerResolution = Publisher.CameraCaptureResolution.LOW;
+    private Publisher.CameraCaptureResolution getPubCapturerResolution(String resolution) {
+        if (resolution.contains("Low")) {
+            return Publisher.CameraCaptureResolution.LOW;
+        } else if (resolution.contains("Medium")) {
+            return Publisher.CameraCaptureResolution.MEDIUM;
+        } else {
+            return Publisher.CameraCaptureResolution.HIGH;
         }
-        else {
-            if (resolution.contains("Medium")){
-                capturerResolution = Publisher.CameraCaptureResolution.MEDIUM;
-            }
-            else {
-                capturerResolution = Publisher.CameraCaptureResolution.HIGH;
-            }
-        }
-        return capturerResolution;
     }
 
-    private Publisher.CameraCaptureFrameRate getPubCapturerFrameRate(String fps){
-        Publisher.CameraCaptureFrameRate capturerFps;
-
-        if (fps.contains("FPS_1")){
-            capturerFps = Publisher.CameraCaptureFrameRate.FPS_1;
+    private Publisher.CameraCaptureFrameRate getPubCapturerFrameRate(String fps) {
+        if (fps.contains("FPS_1")) {
+            return Publisher.CameraCaptureFrameRate.FPS_1;
+        } else if (fps.contains("FPS_7")) {
+            return Publisher.CameraCaptureFrameRate.FPS_7;
+        } else if (fps.contains("FPS_15")) {
+            return Publisher.CameraCaptureFrameRate.FPS_15;
+        } else {
+            return Publisher.CameraCaptureFrameRate.FPS_30;
         }
-        else {
-            if (fps.contains("FPS_7")){
-                capturerFps = Publisher.CameraCaptureFrameRate.FPS_7;
-            }
-            else {
-                if (fps.contains("FPS_7")) {
-                    capturerFps = Publisher.CameraCaptureFrameRate.FPS_15;
-                }
-                else {
-                    capturerFps = Publisher.CameraCaptureFrameRate.FPS_30;
-                }
-            }
-        }
-        return capturerFps;
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        // Remove publisher & subscriber views because we want to reuse them
-        if (mRoom != null && mRoom.getParticipants().size() > 0) {
-            mRoom.getParticipantsViewContainer()
-                    .removeAllViews();
-            mRoom.getLastParticipantView().removeAllViews();
-        }
-        reloadInterface();
     }
 
     @Override
@@ -224,13 +183,6 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
         //Pause implies go to audio only mode
         if (mRoom != null) {
             mRoom.onPause();
-
-            // Remove publisher & subscriber views because we want to reuse them
-            if (mRoom != null && mRoom.getParticipants().size() > 0) {
-                mRoom.getParticipantsViewContainer()
-                        .removeAllViews();
-                mRoom.getLastParticipantView().removeAllViews();
-            }
         }
 
         //Add notification to status bar which gets removed if the user force kills the application.
@@ -277,7 +229,6 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
     @Override
     public void onResume() {
         super.onResume();
-        super.onResume();
         //Resume implies restore video mode if it was enable before pausing app
 
         //If service is binded remove it, so that the next time onPause can bind service.
@@ -292,7 +243,6 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
         }
 
         mNotificationManager.cancel(ClearNotificationService.NOTIFICATION_ID);
-        reloadInterface();
     }
 
     @Override
@@ -303,7 +253,7 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
             mIsBound = false;
         }
 
-        if (this.isFinishing()) {
+        if (isFinishing()) {
             mNotificationManager.cancel(ClearNotificationService.NOTIFICATION_ID);
             if (mRoom != null) {
                 mRoom.disconnect();
@@ -321,22 +271,6 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
         }
 
         super.onDestroy();
-    }
-
-    private void reloadInterface() {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-
-                if (mRoom != null && mRoom.getParticipants().size() > 0) {
-                    for (int i = 0; i < mRoom.getParticipants().size() - 1; i++) {
-                        mRoom.getParticipantsViewContainer()
-                                .addView(mRoom.getParticipants().get(i).getView());
-                    }
-                    mRoom.getLastParticipantView().addView(mRoom.getLastParticipant().getView());
-                }
-            }
-        }, 500);
     }
 
     private void initializeRoom() {
@@ -358,71 +292,43 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
     private class GetRoomDataTask extends AsyncTask<String, Void, Room> {
 
         private String getRoomDetails(String room) throws IOException {
-            String urlStr = getResources().getString(R.string.serverURL) + room;
-
-            URL url = new URL(urlStr);
+            URL url = new URL(getResources().getString(R.string.serverURL) + room);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/json, text/plain, */*");
             connection.connect();
             InputStream inputStream = connection.getInputStream();
-            StringBuilder buffer = new StringBuilder();
-            if (inputStream == null) {
+            try {
+                return IOUtils.toString(inputStream);
+            } catch (NullPointerException e) {
+                e.printStackTrace();
                 return null;
             }
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                buffer.append(line);
-                buffer.append("\n");
-            }
-
-            if (buffer.length() == 0) {
-                return null;
-            }
-            return buffer.toString();
         }
 
         @Override
         protected Room doInBackground(String... params) {
-            String jsonString = null;
             try {
-                jsonString = getRoomDetails(params[0]);
-            } catch (IOException e) {
+                JSONObject  roomJson    = new JSONObject(getRoomDetails(params[0]));
+                String      sessionId   = roomJson.getString("sessionId");
+                String      token       = roomJson.getString("token");
+                String      apiKey      = roomJson.getString("apiKey");
+                return new Room(ChatRoomActivity.this, sessionId, token, apiKey, params[1]);
+            } catch (Exception e) {
                 e.printStackTrace();
-            }
-            if (jsonString == null) {
                 return null;
             }
-
-            Room retValue = null;
-            try {
-                JSONObject roomJson = new JSONObject(jsonString);
-                String sessionId = roomJson.getString("sessionId");
-                String token = roomJson.getString("token");
-                String apiKey = roomJson.getString("apiKey");
-
-                retValue =  new Room(ChatRoomActivity.this, sessionId, token, apiKey, params[1]);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            return retValue;
         }
 
         @Override
         protected void onPostExecute(final Room room) {
+            mConnectingDialog.dismiss();
             if (room != null) {
-                mConnectingDialog.dismiss();
                 mRoom = room;
                 mRoom.setPreviewView(mPreview);
                 mRoom.setParticipantsViewContainer(mParticipantsView, mLastParticipantView, null);
-                mRoom.setMessageView((TextView) findViewById(R.id.messageView),
-                        (ScrollView) findViewById(R.id.scroller));
                 mRoom.connect();
             } else {
-                mConnectingDialog.dismiss();
                 mConnectingDialog = null;
                 showErrorDialog();
             }
@@ -473,7 +379,6 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
             View audioOnlyView = getAudioOnlyIcon();
             this.mRoom.getLastParticipantView().addView(audioOnlyView);
             audioOnlyView.setOnClickListener(clickLastParticipantListener);
-            //TODO add audiometer
         } else {
             this.mRoom.getLastParticipantView().removeAllViews();
             this.mRoom.getLastParticipantView().addView(participant.getView());
@@ -491,11 +396,9 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
             audioOnlyView.setId(index);
             audioOnlyView.setOnClickListener(clickListener);
             this.mRoom.getParticipantsViewContainer().addView(audioOnlyView, index, lp);
-
         } else {
             this.mRoom.getParticipantsViewContainer().removeViewAt(index);
             this.mRoom.getParticipantsViewContainer().addView(participant.getView(), index, lp);
-
         }
 
     }
@@ -535,48 +438,11 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
         );
     }
 
-    //Initialize fragments
-    private void initPublisherFragment() {
-        mPublisherFragment = new PublisherControlFragment();
-        getFragmentManager().beginTransaction()
-                .add(R.id.fragment_pub_container, mPublisherFragment)
-                .commit();
-    }
-
-    @Override
-    public void onMutePublisher() {
-        if (mRoom.getPublisher() != null) {
-            mRoom.getPublisher().setPublishAudio(
-                    !mRoom.getPublisher().getPublishAudio());
-        }
-    }
-
-    @Override
-    public void onSwapCamera() {
-        if (mRoom.getPublisher() != null) {
-            mRoom.getPublisher().cycleCamera();
-        }
-    }
-
-    @Override
-    public void onEndCall() {
-        finish();
-    }
-
     public View.OnLongClickListener onPubStatusClick = new View.OnLongClickListener() {
 
         @Override
         public boolean onLongClick(View v) {
-            boolean visible = false;
-
-            if (mRoom.getPublisher() != null) {
-                // check visibility of bars
-                if (!mPublisherFragment.isPublisherWidgetVisible()) {
-                    visible = true;
-                }
-                mPublisherFragment.publisherClick();
-            }
-            return visible;
+            return false;
         }
 
     };
@@ -601,13 +467,12 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
                     mRoom.getPublisher().getView().setOnLongClickListener(onPubStatusClick);
                     mPreview.addView(mRoom.getPublisher().getView());
                 }
-
-                }
+            }
             }
 
     };
 
-    public void onStatsInfoClick(View v) {
+    public void onStatsInfoClick(@SuppressWarnings("UnusedParameters") View v) {
             getPubStats();
             getSubStats();
             new AlertDialog.Builder(ChatRoomActivity.this)
@@ -632,6 +497,7 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
 
     public void showReconnectingDialog(boolean show){
         if (show) {
+            dialog = new ProgressDialog(this);
             dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             dialog.setMessage("Reconnecting. Please wait...");
             dialog.setIndeterminate(true);
@@ -640,7 +506,7 @@ public class ChatRoomActivity extends Activity implements PublisherControlFragme
         }
         else {
             dialog.dismiss();
-            AlertDialog.Builder builder = new AlertDialog.Builder(ChatRoomActivity.this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Session has been reconnected")
                     .setPositiveButton(android.R.string.ok, null);
             builder.create();

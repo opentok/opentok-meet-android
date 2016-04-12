@@ -109,19 +109,17 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
         Spinner spinner = (Spinner) parent;
-        if(spinner.getId() == R.id.combo_capturer_resolution) {
-            // On selecting a spinner item
-            mCapturerResolution = parent.getItemAtPosition(position).toString();
-            Toast.makeText(parent.getContext(), "Selected: " + mCapturerResolution, Toast.LENGTH_LONG).show();
-        }
-        else {
-            if(spinner.getId() == R.id.combo_capturer_fps) {
-                // On selecting a spinner item
+        switch (spinner.getId()) {
+            case R.id.combo_capturer_resolution:
+                mCapturerResolution = parent.getItemAtPosition(position).toString();
+                Toast.makeText(parent.getContext(), "Selected: " + mCapturerResolution, Toast.LENGTH_LONG).show();
+                break;
+            case R.id.combo_capturer_fps:
                 mCapturerFps = parent.getItemAtPosition(position).toString();
                 Toast.makeText(parent.getContext(), "Selected: " + mCapturerFps, Toast.LENGTH_LONG).show();
-            }
+                break;
+            default: break;
         }
-
     }
 
     @Override
