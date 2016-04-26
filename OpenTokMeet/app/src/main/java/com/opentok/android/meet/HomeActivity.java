@@ -1,8 +1,6 @@
 package com.opentok.android.meet;
 
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 
 import meet.android.opentok.com.opentokmeet.R;
 
@@ -18,8 +16,6 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.opentok.android.OpenTokConfig;
-
 
 public class HomeActivity extends Activity implements AdapterView.OnItemSelectedListener {
 
@@ -31,10 +27,7 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
     private String username;
     private EditText roomNameInput;
     private EditText usernameInput;
-    private Spinner mCapturerResolutionSpinner;
     private String mCapturerResolution;
-
-    private Spinner mCapturerFpsSpinner;
     private String mCapturerFps;
 
 
@@ -58,19 +51,19 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         usernameInput.setText(this.username);
 
 
-        mCapturerResolutionSpinner = (Spinner) findViewById(R.id.combo_capturer_resolution);
-        mCapturerResolutionSpinner.setOnItemSelectedListener(this);
+        Spinner capturerResolutionSpinner = (Spinner) findViewById(R.id.combo_capturer_resolution);
+        capturerResolutionSpinner.setOnItemSelectedListener(this);
         String[] capturerResolutionValues  = getResources().getStringArray(R.array.pub_capturer_resolution);
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, R.layout.simple_spinner_item, capturerResolutionValues);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, R.layout.simple_spinner_item, capturerResolutionValues);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mCapturerResolutionSpinner.setAdapter(dataAdapter);
+        capturerResolutionSpinner.setAdapter(dataAdapter);
 
-        mCapturerFpsSpinner = (Spinner) findViewById(R.id.combo_capturer_fps);
-        mCapturerFpsSpinner.setOnItemSelectedListener(this);
+        Spinner capturerFpsSpinner =  (Spinner) findViewById(R.id.combo_capturer_fps);
+        capturerFpsSpinner.setOnItemSelectedListener(this);
         String[] capturerFpsValues  = getResources().getStringArray(R.array.pub_capturer_fps);
-        dataAdapter = new ArrayAdapter<String>(this, R.layout.simple_spinner_item, capturerFpsValues);
+        dataAdapter = new ArrayAdapter<>(this, R.layout.simple_spinner_item, capturerFpsValues);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mCapturerFpsSpinner.setAdapter(dataAdapter);
+        capturerFpsSpinner.setAdapter(dataAdapter);
 
         // OpenTokConfig.setOTKitLogs(true);
         // OpenTokConfig.setJNILogs(true);
@@ -116,19 +109,17 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
         Spinner spinner = (Spinner) parent;
-        if(spinner.getId() == R.id.combo_capturer_resolution) {
-            // On selecting a spinner item
-            mCapturerResolution = parent.getItemAtPosition(position).toString();
-            Toast.makeText(parent.getContext(), "Selected: " + mCapturerResolution, Toast.LENGTH_LONG).show();
-        }
-        else {
-            if(spinner.getId() == R.id.combo_capturer_fps) {
-                // On selecting a spinner item
+        switch (spinner.getId()) {
+            case R.id.combo_capturer_resolution:
+                mCapturerResolution = parent.getItemAtPosition(position).toString();
+                Toast.makeText(parent.getContext(), "Selected: " + mCapturerResolution, Toast.LENGTH_LONG).show();
+                break;
+            case R.id.combo_capturer_fps:
                 mCapturerFps = parent.getItemAtPosition(position).toString();
                 Toast.makeText(parent.getContext(), "Selected: " + mCapturerFps, Toast.LENGTH_LONG).show();
-            }
+                break;
+            default: break;
         }
-
     }
 
     @Override

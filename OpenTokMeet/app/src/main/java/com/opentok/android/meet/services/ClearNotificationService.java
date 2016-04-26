@@ -20,7 +20,7 @@ public class ClearNotificationService extends Service {
         }
     }
 
-    public static int NOTIFICATION_ID = 1;
+    public static final int NOTIFICATION_ID = 1;
 
     private NotificationManager mNotificationManager;
 

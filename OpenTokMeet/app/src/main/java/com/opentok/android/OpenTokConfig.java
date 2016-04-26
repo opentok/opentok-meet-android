@@ -14,26 +14,10 @@ public class OpenTokConfig {
     private final static String LOG_TAG = "opentok-config";
 
     public static void setAPIRootURL(String apiRootURL) throws MalformedURLException {
-        setAPIRootURL(apiRootURL, true);
-    }
-
-    public static void setAPIRootURL(String apiRootURL, boolean rumorSSL) throws MalformedURLException {
         URL url = new URL(apiRootURL);
-        boolean ssl = false;
-        int port = url.getPort();
-        if("https".equals(url.getProtocol())) {
-            ssl = true;
-            if(port == -1) {
-                port = 443;
-            }
-        } else if("http".equals(url.getProtocol())) {
-            ssl = false;
-            if(port == -1) {
-                port = 80;
-            }
-        }
-
-        setAPIRootURLNative(url.getHost(), ssl, port, rumorSSL);
+        boolean ssl     = ("https".equals(url.getProtocol()));
+        int     port    = (-1 == url.getPort()) ? ((ssl) ? 443 : 80) : url.getPort();
+        setAPIRootURLNative(url.getHost(), ssl, port, true);
     }
 
     public static void setOTKitLogs(boolean otkitLogs) {
@@ -49,15 +33,11 @@ public class OpenTokConfig {
     }
 
     public static String getPublisherInfoStats(PublisherKit publisher) {
-        String publisherStats = getPublisherInfoStatsNative(publisher);
-
-        return publisherStats;
+        return getPublisherInfoStatsNative(publisher);
     }
 
     public static String getSubscriberInfoStats(SubscriberKit subscriber) {
-        String subscriberStats = getSubscriberInfoStatsNative(subscriber);
-
-        return subscriberStats;
+        return getSubscriberInfoStatsNative(subscriber);
     }
 
     public static String getPublisherStat(PublisherKit publisher, long stream, String key){
@@ -85,12 +65,8 @@ public class OpenTokConfig {
     }
 
     public static String getSDKVersion(Session session){
-        String sdkVersion = getSDKVersionNative(session);
-        return sdkVersion;
+        return getSDKVersionNative(session);
     }
-
-    public static native void setProxy(String host, int port);
-    public static native void enableVP8HWDecoder (boolean vp8hwdecoder);
 
     protected static native void setAPIRootURLNative(String host, boolean ssl, int port, boolean rumorSSL);
     protected static native void setOTKitLogsNative(boolean otkitLogs);

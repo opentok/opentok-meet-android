@@ -14,8 +14,6 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
-import android.widget.ScrollView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.opentok.android.BaseVideoRenderer;
@@ -24,55 +22,40 @@ import com.opentok.android.Publisher;
 import com.opentok.android.PublisherKit;
 import com.opentok.android.Session;
 import com.opentok.android.Stream;
-import com.opentok.android.meet.video.CustomVideoCapturer;
 import com.opentok.android.profiler.PerformanceProfiler;
-
-import meet.android.opentok.com.opentokmeet.R;
 
 public class Room extends Session implements PerformanceProfiler.CPUStatListener, PerformanceProfiler.MemStatListener, PerformanceProfiler.BatteryStatListener{
 
     private static final String LOGTAG = "opentok-meet-room";
 
     private Context mContext;
-
-    private String apikey;
-    private String sessionId;
-    private String token;
-
+    private String mToken;
     private Publisher mPublisher;
     private Participant mLastParticipant;
-    private int mCurrentPosition;
     private String mPublisherName = null;
-    private HashMap<Stream, Participant> mParticipantStream = new HashMap<Stream, Participant>();
-    private HashMap<String, Participant> mParticipantConnection
-            = new HashMap<String, Participant>();
-     private ArrayList<Participant> mParticipants = new ArrayList<Participant>();
+    private HashMap<Stream, Participant> mParticipantStream = new HashMap<>();
+    private HashMap<String, Participant> mParticipantConnection = new HashMap<>();
+    private ArrayList<Participant> mParticipants = new ArrayList<>();
 
     private ViewGroup mPreview;
-    private TextView mMessageView;
-    private ScrollView mMessageScroll;
     private LinearLayout mParticipantsViewContainer;
 
     private ViewGroup mLastParticipantView;
-    private OnClickListener onSubscriberUIClick;
 
     private Handler mHandler;
 
     private ChatRoomActivity mActivity;
 
-    PerformanceProfiler mProfiler;
+    private PerformanceProfiler mProfiler;
     private int initialBatteryLevel = 0;
 
-    public Room(Context context, String roomName, String sessionId, String token, String apiKey,
-                String username) {
+    public Room(Context context, String sessionId, String token, String apiKey, String username) {
         super(context, apiKey, sessionId);
-        this.apikey = apiKey;
-        this.sessionId = sessionId;
-        this.token = token;
-        this.mContext = context;
-        this.mPublisherName = username;
-        this.mHandler = new Handler(context.getMainLooper());
-        this.mActivity = (ChatRoomActivity) this.mContext;
+        mToken = token;
+        mContext = context;
+        mPublisherName = username;
+        mHandler = new Handler(context.getMainLooper());
+        mActivity = (ChatRoomActivity) this.mContext;
 
         mProfiler = new PerformanceProfiler(mContext);
         mProfiler.setCPUListener(this);
@@ -80,24 +63,20 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
         mProfiler.setBatteryStatListener(this);
     }
 
-    public void setParticipantsViewContainer(LinearLayout container, ViewGroup lastParticipantView,
-                                             OnClickListener onSubscriberUIClick) {
-        this.mParticipantsViewContainer = container;
-        this.mLastParticipantView = lastParticipantView;
-        this.onSubscriberUIClick = onSubscriberUIClick;
-    }
-
-    public void setMessageView(TextView et, ScrollView scroller) {
-        this.mMessageView = et;
-        this.mMessageScroll = scroller;
+    public void setParticipantsViewContainer(
+            LinearLayout container,
+            ViewGroup lastParticipantView,
+            OnClickListener onSubscriberUIClick) {
+        mParticipantsViewContainer  = container;
+        mLastParticipantView        = lastParticipantView;
     }
 
     public void setPreviewView(ViewGroup preview) {
-        this.mPreview = preview;
+        mPreview = preview;
     }
 
     public void connect() {
-        this.connect(token);
+        connect(mToken);
     }
 
 
@@ -130,56 +109,13 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
         }
     }
 
-    //Callbacks
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (mPublisher != null) {
-            mPreview.setVisibility(View.GONE);
-        }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        mHandler.postDelayed(new Runnable() {
-
-            @Override
-            public void run() {
-                if (mPublisher != null) {
-                    mPreview.setVisibility(View.VISIBLE);
-                    mPreview.removeView(mPublisher.getView());
-                    RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
-                            LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-                    mPreview.addView(mPublisher.getView(), lp);
-                }
-            }
-        }, 500);
-    }
-
-    private float[][] getTemLayersAdj (){
-        float tempLadj [][];
-        tempLadj = new float[4][4];
-
-        for(int i=0; i<4; i++) {
-
-            for(int j=0; j<4; j++) {
-                if (j == 0 ){
-                    tempLadj[i][j] = 0.1f;
-                }
-                else {
-                    tempLadj[i][j] = 1.0f;
-                }
-
-            }
-        }
-        return tempLadj;
-    }
     private Publisher getCustomPublisher(){
-
-        Publisher publisher = null;
-        publisher = new Publisher(mContext, "Android", mActivity.getCapturerResolutionPub(), mActivity.getCapturerFpsPub());
-        return publisher;
+        return new Publisher(
+                mContext,
+                "Android",
+                mActivity.getCapturerResolutionPub(),
+                mActivity.getCapturerFpsPub()
+        );
     }
 
     @Override
@@ -241,9 +177,6 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
     protected void onStreamReceived(Stream stream) {
 
         Participant p = new Participant(mContext, stream);
-
-        //We can use connection data to obtain each user id
-        p.setUserId(stream.getConnection().getData());
 
         if (mParticipants.size() > 0) {
             final Participant lastParticipant = mParticipants.get(mParticipants.size() - 1);
@@ -356,7 +289,7 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
         }
     };
 
-    View.OnClickListener clickListener = new View.OnClickListener() {
+    private View.OnClickListener clickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
 
@@ -371,14 +304,14 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
             }
         int index = mParticipantsViewContainer.indexOfChild(participant.getView());
         if (index == -1) {
-            index = (int) view.getId();
+            index = view.getId();
         }
         mActivity.setAudioOnlyViewListPartcipants(enableAudioOnly, participant, index, this);
 
         }
     };
 
-    View.OnClickListener clickLastParticipantListener = new View.OnClickListener() {
+    private View.OnClickListener clickLastParticipantListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
             boolean enableAudioOnly = mLastParticipant.getSubscribeToVideo();

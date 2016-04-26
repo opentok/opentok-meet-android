@@ -22,32 +22,20 @@ public class Participant extends Subscriber {
     protected static final int MAX_FPS = 30;
     protected static final int MID_FPS = 15;
 
-    private String mUserId;
-    private String mName;
-    private Context mContext;
+    private final String  mName;
+    private final ChatRoomActivity mActivity;
     private Boolean mSubscriberVideoOnly = false;
-
-    private ChatRoomActivity mActivity;
 
     public Participant(Context context, Stream stream) {
         super(context, stream);
 
-        this.mContext = context;
-        this.mActivity = (ChatRoomActivity) this.mContext;
-        setName("User" + ((int) (Math.random() * 1000)));
-        this.setStyle(BaseVideoRenderer.STYLE_VIDEO_SCALE, BaseVideoRenderer.STYLE_VIDEO_FILL);
-    }
-
-    public void setUserId(String name) {
-        this.mUserId = name;
+        mActivity   = (ChatRoomActivity)context;
+        mName       = "User" + ((int) (Math.random() * 1000));
+        setStyle(BaseVideoRenderer.STYLE_VIDEO_SCALE, BaseVideoRenderer.STYLE_VIDEO_FILL);
     }
 
     public String getName() {
         return mName;
-    }
-
-    public void setName(String name) {
-        this.mName = name;
     }
 
     public Boolean getSubscriberVideoOnly() {
@@ -100,8 +88,7 @@ public class Participant extends Subscriber {
     }
 
     private void showErrorDialog(OpentokError error) {
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                this.mContext);
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mActivity);
 
         alertDialogBuilder.setTitle(R.string.error_title);
         alertDialogBuilder
