@@ -14,8 +14,10 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.Toast;
 
+import com.opentok.android.OpenTokConfig;
 
 public class HomeActivity extends Activity implements AdapterView.OnItemSelectedListener {
 
@@ -29,6 +31,7 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
     private EditText usernameInput;
     private String mCapturerResolution;
     private String mCapturerFps;
+    private boolean mH264Support;
 
 
     /** Called when the activity is first created. */
@@ -50,7 +53,6 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         usernameInput = (EditText) findViewById(R.id.input_username);
         usernameInput.setText(this.username);
 
-
         Spinner capturerResolutionSpinner = (Spinner) findViewById(R.id.combo_capturer_resolution);
         capturerResolutionSpinner.setOnItemSelectedListener(this);
         String[] capturerResolutionValues  = getResources().getStringArray(R.array.pub_capturer_resolution);
@@ -64,6 +66,9 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         dataAdapter = new ArrayAdapter<>(this, R.layout.simple_spinner_item, capturerFpsValues);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         capturerFpsSpinner.setAdapter(dataAdapter);
+
+        Switch h264Support = (Switch) findViewById(R.id.h264Support);
+        mH264Support = h264Support.isChecked();
 
         // OpenTokConfig.setOTKitLogs(true);
         // OpenTokConfig.setJNILogs(true);
@@ -81,6 +86,7 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         enterChatRoomIntent.putExtra(ChatRoomActivity.ARG_USERNAME_ID, username);
         enterChatRoomIntent.putExtra(ChatRoomActivity.PUB_CAPTURER_RESOLUTION, mCapturerResolution);
         enterChatRoomIntent.putExtra(ChatRoomActivity.PUB_CAPTURER_FPS, mCapturerFps);
+        enterChatRoomIntent.putExtra(ChatRoomActivity.H264_SUPPORT, mH264Support);
         //save room name and username
         saveConferenceData();
 
@@ -124,6 +130,5 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
-
     }
 }

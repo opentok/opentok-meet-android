@@ -56,6 +56,7 @@ public class ChatRoomActivity extends Activity  {
     public static final String ARG_USERNAME_ID = "usernameId";
     public static final String PUB_CAPTURER_RESOLUTION= "PUB_CAPTURER_RESOLUTION";
     public static final String PUB_CAPTURER_FPS= "PUB_CAPTURER_FPS";
+    public static final String H264_SUPPORT = "H264_SUPPORT";
 
     private String serverURL = null;
     private String mRoomName;
@@ -64,6 +65,8 @@ public class ChatRoomActivity extends Activity  {
 
     private Publisher.CameraCaptureResolution mCapturerResolutionPub = Publisher.CameraCaptureResolution.MEDIUM;
     private Publisher.CameraCaptureFrameRate mCapturerFpsPub = Publisher.CameraCaptureFrameRate.FPS_30;
+
+    private boolean mH264SupportEnabled;
 
     private ProgressDialog mConnectingDialog;
 
@@ -138,9 +141,11 @@ public class ChatRoomActivity extends Activity  {
 
         String framerate =  getIntent().getStringExtra(PUB_CAPTURER_FPS);
         mCapturerFpsPub = getPubCapturerFrameRate(framerate);
+
+        mH264SupportEnabled = getIntent().getBooleanExtra(H264_SUPPORT, false);
+
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         initializeRoom();
-
     }
 
     private Publisher.CameraCaptureResolution getPubCapturerResolution(String resolution) {
@@ -286,7 +291,7 @@ public class ChatRoomActivity extends Activity  {
         mConnectingDialog.show();
 
         GetRoomDataTask task = new GetRoomDataTask();
-        task.execute(mRoomName, mUsername);
+        task.execute(mRoomName, mUsername, Boolean.toString(mH264SupportEnabled));
     }
 
     private class GetRoomDataTask extends AsyncTask<String, Void, Room> {
@@ -313,7 +318,7 @@ public class ChatRoomActivity extends Activity  {
                 String      sessionId   = roomJson.getString("sessionId");
                 String      token       = roomJson.getString("token");
                 String      apiKey      = roomJson.getString("apiKey");
-                return new Room(ChatRoomActivity.this, sessionId, token, apiKey, params[1]);
+                return new Room(ChatRoomActivity.this, sessionId, token, apiKey, params[1], Boolean.valueOf(params[2]));
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
