@@ -1,5 +1,7 @@
 package com.opentok.android.meet;
 
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.os.Bundle;
 
 import meet.android.opentok.com.opentokmeet.R;
@@ -46,6 +48,16 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         restoreConferenceData();
 
         setContentView(R.layout.main_layout);
+
+        if (getActionBar() != null) {
+            ActionBar actionBar = getActionBar();
+            actionBar.setDisplayShowTitleEnabled(false);
+            actionBar.setDisplayUseLogoEnabled(false);
+            actionBar.setDisplayShowCustomEnabled(true);
+            @SuppressLint("InflateParams")
+            View cView = getLayoutInflater().inflate(R.layout.custom_home_title, null);
+            actionBar.setCustomView(cView);
+        }
 
         roomNameInput = (EditText) findViewById(R.id.input_room_name);
         roomNameInput.setText(this.roomName);
@@ -130,5 +142,10 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
+    }
+
+    public void onAdvancedSettingsClick(@SuppressWarnings("UnusedParameters") View v) {
+        Intent intent = new Intent(this, AdvancedSettingsActivity.class);
+        startActivity(intent);
     }
 }

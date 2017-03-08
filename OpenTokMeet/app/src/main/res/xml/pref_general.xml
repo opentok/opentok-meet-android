@@ -1,0 +1,8 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="media_coding_switch"
+        android:summary="@string/pref_description_media_coding"
+        android:title="@string/pref_title_media_coding" />
+
+</PreferenceScreen>
