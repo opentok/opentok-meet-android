@@ -49,7 +49,7 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
     private PerformanceProfiler mProfiler;
     private int initialBatteryLevel = 0;
 
-    public Room(Context context, String sessionId, String token, String apiKey, String username, boolean h264SupportEnabled) {
+    public Room(Context context, String sessionId, String token, String apiKey, String username) {
         super(context, apiKey, sessionId);
         mToken = token;
         mContext = context;

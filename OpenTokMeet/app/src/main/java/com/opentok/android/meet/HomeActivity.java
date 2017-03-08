@@ -9,6 +9,7 @@ import meet.android.opentok.com.opentokmeet.R;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -26,6 +27,7 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
     private static final String LOGTAG = "meet.tokbox";
 
     private static final String LAST_CONFERENCE_DATA = "LAST_CONFERENCE_DATA";
+    private static final String MEDIA_CODING_SWITCH_KEY = "media_coding_switch";
 
     private String roomName;
     private String username;
@@ -79,9 +81,6 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         capturerFpsSpinner.setAdapter(dataAdapter);
 
-        Switch h264Support = (Switch) findViewById(R.id.h264Support);
-        mH264Support = h264Support.isChecked();
-
         // OpenTokConfig.setOTKitLogs(true);
         // OpenTokConfig.setJNILogs(true);
         // OpenTokConfig.setWebRTCLogs(true);
@@ -98,9 +97,14 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         enterChatRoomIntent.putExtra(ChatRoomActivity.ARG_USERNAME_ID, username);
         enterChatRoomIntent.putExtra(ChatRoomActivity.PUB_CAPTURER_RESOLUTION, mCapturerResolution);
         enterChatRoomIntent.putExtra(ChatRoomActivity.PUB_CAPTURER_FPS, mCapturerFps);
-        enterChatRoomIntent.putExtra(ChatRoomActivity.H264_SUPPORT, mH264Support);
         //save room name and username
         saveConferenceData();
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        OpenTokConfig.setUseMediaCodecFactories(sharedPref.getBoolean(MEDIA_CODING_SWITCH_KEY, false));
+
+        Switch h264Support = (Switch) findViewById(R.id.h264Support);
+        OpenTokConfig.setPreferH264Codec(h264Support.isChecked());
 
         startActivity(enterChatRoomIntent);
     }

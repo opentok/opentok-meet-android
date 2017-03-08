@@ -68,6 +68,15 @@ public class OpenTokConfig {
         return getSDKVersionNative(session);
     }
 
+
+     public static void setUseMediaCodecFactories(boolean value) {
+         setUseMediaCodecFactoriesNative(value);
+     }
+
+     public static void setPreferH264Codec(boolean value) {
+         setPreferH264CodecNative(value);
+     }
+
     protected static native void setAPIRootURLNative(String host, boolean ssl, int port, boolean rumorSSL);
     protected static native void setOTKitLogsNative(boolean otkitLogs);
     protected static native void setJNILogsNative(boolean jniLogs);
@@ -82,4 +91,7 @@ public class OpenTokConfig {
     protected static native long[] getSubscriberVideoStreamsNative(SubscriberKit subscriber);
     protected static native String getSubscriberStatNative(SubscriberKit subscriber, long stream, String key);
     protected static native String getSDKVersionNative(Session session);
+
+    protected static native void setUseMediaCodecFactoriesNative(boolean value);
+    protected static native void setPreferH264CodecNative(boolean value);
 }
