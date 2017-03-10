@@ -23,7 +23,7 @@
     <string name="archivingOn">Archiving on</string>
     <string name="archivingOff">Archiving off</string>
     <string name="sharingLink">Please join me at</string>
-    <string	name="clearNotificationService">Clear Notification</string>
+    <string name="clearNotificationService">Clear Notification</string>
 
     <string name="serverURL">"https://meet.tokbox.com/"</string>
 
@@ -41,5 +41,15 @@
         <item>Capturer fps: 7</item>
         <item>Capturer fps: 1</item>
     </string-array>
+    <string name="title_activity_advanced_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+    <string name="pref_header_media_coding">Media coding</string>
+
+    <string name="pref_title_media_coding">Enable new engine</string>
+    <string name="pref_description_media_coding">
+        Use MediaCodecVideoEncoderFactory/MediaCodecVideoDecoderFactory WebRTC factories.
+    </string>
 
 </resources>

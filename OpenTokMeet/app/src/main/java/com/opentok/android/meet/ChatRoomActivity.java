@@ -138,9 +138,9 @@ public class ChatRoomActivity extends Activity  {
 
         String framerate =  getIntent().getStringExtra(PUB_CAPTURER_FPS);
         mCapturerFpsPub = getPubCapturerFrameRate(framerate);
+
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         initializeRoom();
-
     }
 
     private Publisher.CameraCaptureResolution getPubCapturerResolution(String resolution) {

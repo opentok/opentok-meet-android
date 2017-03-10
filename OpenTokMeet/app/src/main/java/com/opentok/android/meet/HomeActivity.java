@@ -1,5 +1,7 @@
 package com.opentok.android.meet;
 
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.os.Bundle;
 
 import meet.android.opentok.com.opentokmeet.R;
@@ -7,6 +9,7 @@ import meet.android.opentok.com.opentokmeet.R;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -14,14 +17,17 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.Toast;
 
+import com.opentok.android.OpenTokConfig;
 
 public class HomeActivity extends Activity implements AdapterView.OnItemSelectedListener {
 
     private static final String LOGTAG = "meet.tokbox";
 
     private static final String LAST_CONFERENCE_DATA = "LAST_CONFERENCE_DATA";
+    private static final String MEDIA_CODING_SWITCH_KEY = "media_coding_switch";
 
     private String roomName;
     private String username;
@@ -29,6 +35,7 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
     private EditText usernameInput;
     private String mCapturerResolution;
     private String mCapturerFps;
+    private boolean mH264Support;
 
 
     /** Called when the activity is first created. */
@@ -44,12 +51,21 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
 
         setContentView(R.layout.main_layout);
 
+        if (getActionBar() != null) {
+            ActionBar actionBar = getActionBar();
+            actionBar.setDisplayShowTitleEnabled(false);
+            actionBar.setDisplayUseLogoEnabled(false);
+            actionBar.setDisplayShowCustomEnabled(true);
+            @SuppressLint("InflateParams")
+            View cView = getLayoutInflater().inflate(R.layout.custom_home_title, null);
+            actionBar.setCustomView(cView);
+        }
+
         roomNameInput = (EditText) findViewById(R.id.input_room_name);
         roomNameInput.setText(this.roomName);
 
         usernameInput = (EditText) findViewById(R.id.input_username);
         usernameInput.setText(this.username);
-
 
         Spinner capturerResolutionSpinner = (Spinner) findViewById(R.id.combo_capturer_resolution);
         capturerResolutionSpinner.setOnItemSelectedListener(this);
@@ -83,6 +99,12 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         enterChatRoomIntent.putExtra(ChatRoomActivity.PUB_CAPTURER_FPS, mCapturerFps);
         //save room name and username
         saveConferenceData();
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        OpenTokConfig.setUseMediaCodecFactories(sharedPref.getBoolean(MEDIA_CODING_SWITCH_KEY, false));
+
+        Switch h264Support = (Switch) findViewById(R.id.h264Support);
+        OpenTokConfig.setPreferH264Codec(h264Support.isChecked());
 
         startActivity(enterChatRoomIntent);
     }
@@ -124,6 +146,10 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
+    }
 
+    public void onAdvancedSettingsClick(@SuppressWarnings("UnusedParameters") View v) {
+        Intent intent = new Intent(this, AdvancedSettingsActivity.class);
+        startActivity(intent);
     }
 }
