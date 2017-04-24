@@ -1,8 +1,29 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:key="DEBUG_SETTINGS" >
+
     <SwitchPreference
-        android:defaultValue="true"
-        android:key="media_coding_switch"
-        android:summary="@string/pref_description_media_coding"
-        android:title="@string/pref_title_media_coding" />
+        android:defaultValue="false"
+        android:key="enbale_jni_log"
+        android:summary="@string/pref_jnilog_title"
+        android:title="@string/pref_jnilog_desc" />
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="enable_otk_log"
+        android:summary="@string/pref_otklog_title"
+        android:title="@string/pref_otklog_desc" />
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="enable_webrtc_log"
+        android:summary="@string/pref_rtclog_title"
+        android:title="@string/pref_rtclog_desc" />
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="enable_webrtc_mediacodec"
+        android:summary="@string/pref_mediacodec_title"
+        android:title="@string/pref_mediacodec_desc" />
 
 </PreferenceScreen>

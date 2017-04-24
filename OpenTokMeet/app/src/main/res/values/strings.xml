@@ -30,25 +30,43 @@
     <string name="capturer_resolution_prompt">Choose the camera capturer resolution</string>
     <string name="capturer_fps_prompt">Choose the camera capturer fps</string>
 
+    <string name="capturer_res_label">Capture Resolution</string>
     <string-array name="pub_capturer_resolution">
-        <item>Capturer resolution: Medium</item>
-        <item>Capturer resolution: Low</item>
-        <item>Capturer resolution: High</item>
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
     </string-array>
+    <string name="capturer_fps_label">Capture Frame Rate</string>
     <string-array name="pub_capturer_fps">
-        <item>Capturer fps: 30</item>
-        <item>Capturer fps: 15</item>
-        <item>Capturer fps: 7</item>
-        <item>Capturer fps: 1</item>
+        <item>30</item>
+        <item>15</item>
+        <item>7</item>
+        <item>1</item>
     </string-array>
     <string name="title_activity_advanced_settings">Settings</string>
+    <string name="h264_switch_label">Enable H264 support</string>
+
 
     <!-- Strings related to Settings -->
+    <string name="pref_debug_settings">Debug Settings</string>
 
-    <string name="pref_header_media_coding">Media coding</string>
+    <string name="pref_jnilog_title">Enable JNI Logging</string>
+    <string name="pref_jnilog_desc">
+        Enable Opentok JNI debug logging messages.
+    </string>
 
-    <string name="pref_title_media_coding">Enable new engine</string>
-    <string name="pref_description_media_coding">
+    <string name="pref_otklog_title">Enable OTKit Logging</string>
+    <string name="pref_otklog_desc">
+        Enable Opentok OTKit debug logging messages.
+    </string>
+
+    <string name="pref_rtclog_title">Enable WebRTC Logging</string>
+    <string name="pref_rtclog_desc">
+        Enable WebRTC debug logging messages.
+    </string>
+
+    <string name="pref_mediacodec_title">Enable New Engine</string>
+    <string name="pref_mediacodec_desc">
         Use MediaCodecVideoEncoderFactory/MediaCodecVideoDecoderFactory WebRTC factories.
     </string>
 

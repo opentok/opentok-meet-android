@@ -2,6 +2,10 @@ package com.opentok.android.meet;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import meet.android.opentok.com.opentokmeet.R;
@@ -12,9 +16,8 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Switch;
@@ -22,17 +25,34 @@ import android.widget.Toast;
 
 import com.opentok.android.OpenTokConfig;
 
-public class HomeActivity extends Activity implements AdapterView.OnItemSelectedListener {
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Arrays;
+
+public class HomeActivity extends Activity implements AdapterView.OnItemSelectedListener {
     private static final String LOGTAG = "meet.tokbox";
 
-    private static final String LAST_CONFERENCE_DATA = "LAST_CONFERENCE_DATA";
-    private static final String MEDIA_CODING_SWITCH_KEY = "media_coding_switch";
+    private static final String PREF_TAG_CONFERENCE = "CONFERENCE_SETTINGS";
+    private static final String PREF_ROOMNAME   = "room_name";
+    private static final String PREF_USERNAME   = "user_name";
+    private static final String PREF_CAPTURERRES= "capturer_res";
+    private static final String PREF_CAPTURERFPS= "capturer_fps";
+    private static final String PREF_H264       = "h264_support";
 
-    private String roomName;
-    private String username;
-    private EditText roomNameInput;
-    private EditText usernameInput;
+    private static final String PREF_TAG_DEBUG = "DEBUG_SETTINGS";
+    private static final String PREF_JNI_LOG   = "enbale_jni_log";
+    private static final String PREF_OTK_LOG   = "enable_otk_log";
+    private static final String PREF_RTC_LOG   = "enable_webrtc_log";
+    private static final String PREF_MEDIACODEC= "enable_webrtc_mediacodec";
+
+
+    private String mRoomName;
+    private String mUsername;
     private String mCapturerResolution;
     private String mCapturerFps;
     private boolean mH264Support;
@@ -42,15 +62,8 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        //restore last used conference data
-        restoreConferenceData();
-
+        // setup/load views
         setContentView(R.layout.main_layout);
-
         if (getActionBar() != null) {
             ActionBar actionBar = getActionBar();
             actionBar.setDisplayShowTitleEnabled(false);
@@ -61,84 +74,179 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
             actionBar.setCustomView(cView);
         }
 
-        roomNameInput = (EditText) findViewById(R.id.input_room_name);
-        roomNameInput.setText(this.roomName);
+        // setup action handlers
+        ((Spinner)findViewById(R.id.combo_capturer_resolution)).setOnItemSelectedListener(this);
+        ((Spinner)findViewById(R.id.combo_capturer_fps)).setOnItemSelectedListener(this);
 
-        usernameInput = (EditText) findViewById(R.id.input_username);
-        usernameInput.setText(this.username);
-
-        Spinner capturerResolutionSpinner = (Spinner) findViewById(R.id.combo_capturer_resolution);
-        capturerResolutionSpinner.setOnItemSelectedListener(this);
-        String[] capturerResolutionValues  = getResources().getStringArray(R.array.pub_capturer_resolution);
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, R.layout.simple_spinner_item, capturerResolutionValues);
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        capturerResolutionSpinner.setAdapter(dataAdapter);
-
-        Spinner capturerFpsSpinner =  (Spinner) findViewById(R.id.combo_capturer_fps);
-        capturerFpsSpinner.setOnItemSelectedListener(this);
-        String[] capturerFpsValues  = getResources().getStringArray(R.array.pub_capturer_fps);
-        dataAdapter = new ArrayAdapter<>(this, R.layout.simple_spinner_item, capturerFpsValues);
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        capturerFpsSpinner.setAdapter(dataAdapter);
-
-        // OpenTokConfig.setOTKitLogs(true);
-        // OpenTokConfig.setJNILogs(true);
-        // OpenTokConfig.setWebRTCLogs(true);
+        // restore last used conference settings
+        restoreSettings();
     }
 
     public void joinRoom(View v) {
         Log.i(LOGTAG, "join room button clicked.");
 
-        roomName = roomNameInput.getText().toString();
-        username = usernameInput.getText().toString();
+        AsyncTask<String, Void, Exception> fetchRoomData =
+                new AsyncTask<String, Void, Exception>() {
+            private Intent          mLaunchIntent   = null;
+            private ProgressDialog  mCxnDialog      = null;
 
-        Intent enterChatRoomIntent = new Intent(this, ChatRoomActivity.class);
-        enterChatRoomIntent.putExtra(ChatRoomActivity.ARG_ROOM_ID, roomName);
-        enterChatRoomIntent.putExtra(ChatRoomActivity.ARG_USERNAME_ID, username);
-        enterChatRoomIntent.putExtra(ChatRoomActivity.PUB_CAPTURER_RESOLUTION, mCapturerResolution);
-        enterChatRoomIntent.putExtra(ChatRoomActivity.PUB_CAPTURER_FPS, mCapturerFps);
-        //save room name and username
-        saveConferenceData();
+            private String _fetch(String room) throws IOException, NullPointerException {
+                URL url = new URL(getResources().getString(R.string.serverURL) + room);
+                HttpURLConnection cxn = (HttpURLConnection)url.openConnection();
+                cxn.setRequestMethod("GET");
+                cxn.setRequestProperty("Accept", "application/json, text/plain, */*");
+                cxn.connect();
+                InputStream inputStream = cxn.getInputStream();
+                return IOUtils.toString(inputStream);
+            }
 
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        OpenTokConfig.setUseMediaCodecFactories(sharedPref.getBoolean(MEDIA_CODING_SWITCH_KEY, false));
+            @Override
+            protected void onPreExecute() {
+                /* disable join button */
+                ((Button)findViewById(R.id.button_join_room)).setEnabled(false);
+                /* throw up connecting dialog */
+                mCxnDialog = new ProgressDialog(HomeActivity.this);
+                mCxnDialog.setTitle("Joining Room...");
+                mCxnDialog.setMessage("Please wait.");
+                mCxnDialog.setCancelable(false);
+                mCxnDialog.setIndeterminate(true);
+                mCxnDialog.show();
+            }
 
-        Switch h264Support = (Switch) findViewById(R.id.h264Support);
-        OpenTokConfig.setPreferH264Codec(h264Support.isChecked());
+            @Override
+            protected Exception doInBackground(String... params) {
+                try {
+                    JSONObject roomJson    = new JSONObject(_fetch(params[0]));
+                    /* create intent and launch room activity */
+                    mLaunchIntent = new Intent(
+                            HomeActivity.this,
+                            ChatRoomActivity.class
+                    );
+                    mLaunchIntent.putExtra(
+                            ChatRoomActivity.INTENT_APIKEY,
+                            roomJson.getString("apiKey")
+                    );
+                    mLaunchIntent.putExtra(
+                            ChatRoomActivity.INTENT_SESSION_ID,
+                            roomJson.getString("sessionId")
+                    );
+                    mLaunchIntent.putExtra(
+                            ChatRoomActivity.INTENT_SESSION_TOKEN,
+                            roomJson.getString("token")
+                    );
+                    mLaunchIntent.putExtra(
+                            ChatRoomActivity.INTENT_ROOM_NAME,
+                            mRoomName
+                    );
+                    mLaunchIntent.putExtra(
+                            ChatRoomActivity.INTENT_USER_NAME,
+                            mUsername
+                    );
+                    mLaunchIntent.putExtra(
+                            ChatRoomActivity.INTENT_CAP_RESOLUTION,
+                            mCapturerResolution
+                    );
+                    mLaunchIntent.putExtra(
+                            ChatRoomActivity.INTENT_CAP_FPS,
+                            mCapturerFps
+                    );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return e;
+                }
+                return null;
+            }
 
-        startActivity(enterChatRoomIntent);
+            @Override
+            protected void onPostExecute(final Exception except) {
+                /* re-enable join button */
+                ((Button)findViewById(R.id.button_join_room)).setEnabled(true);
+                /* dismiss connection dialog */
+                mCxnDialog.dismiss();
+                /* either launch video chat room activity or report error */
+                if (null == except) {
+                    saveSettings();
+                    /* launch activity */
+                    startActivity(mLaunchIntent);
+                } else {
+                    /* report error */
+                    (new AlertDialog.Builder(HomeActivity.this))
+                            .setTitle(R.string.error_title)
+                            .setMessage(R.string.error)
+                            .setCancelable(false)
+                            .setPositiveButton(
+                                    "OK",
+                                    new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            finish();
+                                        }
+                                    })
+                            .create().show();
+                }
+            }
+        };
+        /* update values from ui */
+        mRoomName   = ((EditText)findViewById(R.id.input_room_name)).getText().toString();
+        mUsername   = ((EditText)findViewById(R.id.input_username)).getText().toString();
+        mH264Support= ((Switch)findViewById(R.id.h264Support)).isChecked();
+        /* save conference settings */
+        saveSettings();
+        /* request conference information from server */
+        fetchRoomData.execute(mRoomName);
     }
 
-    private void saveConferenceData() {
-
-        SharedPreferences settings = getApplicationContext()
-                .getSharedPreferences(LAST_CONFERENCE_DATA, 0);
-        SharedPreferences.Editor editor = settings.edit();
-        editor.putString("roomName", roomName);
-        editor.putString("username", username);
-
+    private void saveSettings() {
+        SharedPreferences.Editor editor     = null;
+        /* Conference Settings */
+        editor = this.getSharedPreferences(PREF_TAG_CONFERENCE, 0).edit();
+        editor.putString(PREF_ROOMNAME, mRoomName);
+        editor.putString(PREF_USERNAME, mUsername);
+        editor.putString(PREF_CAPTURERRES, mCapturerResolution);
+        editor.putString(PREF_CAPTURERFPS, mCapturerFps);
+        editor.putBoolean(PREF_H264, mH264Support);
         editor.apply();
     }
 
-    private void restoreConferenceData() {
-        SharedPreferences settings = getApplicationContext()
-                .getSharedPreferences(LAST_CONFERENCE_DATA, 0);
-        roomName = settings.getString("roomName", "");
-        username = settings.getString("username", "");
+    private void restoreSettings() {
+        SharedPreferences settings = null;
+        /* Conference Settings */
+        settings = this.getSharedPreferences(PREF_TAG_CONFERENCE, 0);
+        mRoomName           = settings.getString(PREF_ROOMNAME, "");
+        mUsername           = settings.getString(PREF_USERNAME, "");
+        mCapturerResolution = settings.getString(PREF_CAPTURERRES, "Medium");
+        mCapturerFps        = settings.getString(PREF_CAPTURERFPS, "30");
+        mH264Support        = settings.getBoolean(PREF_H264, true);
+        /* restore room name/user name UI */
+        ((EditText)findViewById(R.id.input_room_name)).setText(mRoomName);
+        ((EditText)findViewById(R.id.input_username)).setText(mUsername);
+        /* restore capturer resolution selection */
+        String[] resolution_lst = getResources().getStringArray(R.array.pub_capturer_resolution);
+        ((Spinner)findViewById(R.id.combo_capturer_resolution)).setSelection(
+                Arrays.asList(resolution_lst).indexOf(mCapturerResolution)
+        );
+        /* restore capturer frame reate selection */
+        String[] framerate_lst = getResources().getStringArray(R.array.pub_capturer_fps);
+        ((Spinner)findViewById(R.id.combo_capturer_fps)).setSelection(
+                Arrays.asList(framerate_lst).indexOf(mCapturerFps)
+        );
+        /* restore H264 support flag */
+        ((Switch)findViewById(R.id.h264Support)).setChecked(mH264Support);
+        /* Debug Settings */
+        settings = this.getSharedPreferences(PREF_TAG_DEBUG, 0);
+        OpenTokConfig.setJNILogs(settings.getBoolean(PREF_JNI_LOG, false));
+        OpenTokConfig.setOTKitLogs(settings.getBoolean(PREF_OTK_LOG, false));
+        OpenTokConfig.setOTKitLogs(settings.getBoolean(PREF_RTC_LOG, false));
+        OpenTokConfig.setUseMediaCodecFactories(settings.getBoolean(PREF_MEDIACODEC, false));
     }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-
-        Spinner spinner = (Spinner) parent;
-        switch (spinner.getId()) {
+        switch (parent.getId()) {
             case R.id.combo_capturer_resolution:
                 mCapturerResolution = parent.getItemAtPosition(position).toString();
-                Toast.makeText(parent.getContext(), "Selected: " + mCapturerResolution, Toast.LENGTH_LONG).show();
                 break;
             case R.id.combo_capturer_fps:
                 mCapturerFps = parent.getItemAtPosition(position).toString();
-                Toast.makeText(parent.getContext(), "Selected: " + mCapturerFps, Toast.LENGTH_LONG).show();
                 break;
             default: break;
         }
