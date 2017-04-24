@@ -24,27 +24,30 @@ import com.opentok.android.Session;
 import com.opentok.android.Stream;
 import com.opentok.android.profiler.PerformanceProfiler;
 
-public class Room extends Session implements PerformanceProfiler.CPUStatListener, PerformanceProfiler.MemStatListener, PerformanceProfiler.BatteryStatListener{
+public class Room extends Session implements
+        PerformanceProfiler.CPUStatListener,
+        PerformanceProfiler.MemStatListener,
+        PerformanceProfiler.BatteryStatListener {
 
     private static final String LOGTAG = "opentok-meet-room";
 
-    private Context mContext;
-    private String mToken;
-    private Publisher mPublisher;
+    private Context     mContext;
+    private String      mToken;
+    private Publisher   mPublisher;
     private Participant mLastParticipant;
-    private String mPublisherName = null;
-    private HashMap<Stream, Participant> mParticipantStream = new HashMap<>();
-    private HashMap<String, Participant> mParticipantConnection = new HashMap<>();
-    private ArrayList<Participant> mParticipants = new ArrayList<>();
+    private String      mPublisherName = null;
+    private Publisher.CameraCaptureResolution mPublisherRes =
+            Publisher.CameraCaptureResolution.MEDIUM;
+    private Publisher.CameraCaptureFrameRate  mPublisherFps =
+            Publisher.CameraCaptureFrameRate.FPS_30;
+    private HashMap<Stream, Participant>    mParticipantStream      = new HashMap<>();
+    private HashMap<String, Participant>    mParticipantConnection  = new HashMap<>();
+    private ArrayList<Participant>          mParticipants           = new ArrayList<>();
 
-    private ViewGroup mPreview;
-    private LinearLayout mParticipantsViewContainer;
-
-    private ViewGroup mLastParticipantView;
-
-    private Handler mHandler;
-
-    private ChatRoomActivity mActivity;
+    private ViewGroup           mPreview;
+    private LinearLayout        mParticipantsViewContainer;
+    private ViewGroup           mLastParticipantView;
+    private ChatRoomActivity    mActivity;
 
     private PerformanceProfiler mProfiler;
     private int initialBatteryLevel = 0;
@@ -54,7 +57,6 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
         mToken = token;
         mContext = context;
         mPublisherName = username;
-        mHandler = new Handler(context.getMainLooper());
         mActivity = (ChatRoomActivity) this.mContext;
 
         mProfiler = new PerformanceProfiler(mContext);
@@ -79,6 +81,11 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
         connect(mToken);
     }
 
+    public void setPublisherSettings(Publisher.CameraCaptureResolution resolution,
+                                     Publisher.CameraCaptureFrameRate fps) {
+        mPublisherRes = resolution;
+        mPublisherFps = fps;
+    }
 
 
     public Publisher getPublisher() {
@@ -109,22 +116,19 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
         }
     }
 
-    private Publisher getCustomPublisher(){
-        return new Publisher(
-                mContext,
-                "Android",
-                mActivity.getCapturerResolutionPub(),
-                mActivity.getCapturerFpsPub()
-        );
+    private Publisher createPublisher() {
+        return (new Publisher.Builder(mContext))
+                    .name(mPublisherName)
+                    .resolution(mPublisherRes)
+                    .frameRate(mPublisherFps)
+                    .build();
     }
 
     @Override
     protected void onConnected() {
         //check simulcast case for publisher
 
-        //mPublisher = new Publisher(mContext, "Android");
-        mPublisher = getCustomPublisher();
-        mPublisher.setName(mPublisherName);
+        mPublisher = createPublisher();
         mPublisher.setAudioFallbackEnabled(true);
         mPublisher.setPublisherListener(new PublisherKit.PublisherListener() {
             @Override
@@ -142,21 +146,22 @@ public class Room extends Session implements PerformanceProfiler.CPUStatListener
                 Log.d(LOGTAG, "onError!!");
             }
         });
-
         publish(mPublisher);
 
         // Add video preview
         RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
-                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-        SurfaceView v = (SurfaceView) mPublisher.getView();
-        v.setZOrderOnTop(true);
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
+        );
+        ((SurfaceView)mPublisher.getView()).setZOrderOnTop(true);
 
-        mPreview.addView(v, lp);
+        mPreview.addView(mPublisher.getView(), lp);
         mPublisher.getView().setOnClickListener(mActivity.onPubViewClick);
         mPublisher.getView().setOnLongClickListener(mActivity.onPubStatusClick);
-        mPublisher.setStyle(BaseVideoRenderer.STYLE_VIDEO_SCALE,
-                BaseVideoRenderer.STYLE_VIDEO_FILL);
-
+        mPublisher.setStyle(
+                BaseVideoRenderer.STYLE_VIDEO_SCALE,
+                BaseVideoRenderer.STYLE_VIDEO_FILL
+        );
         startGetMetrics();
 
     }
