@@ -141,100 +141,20 @@ public class ChatRoomActivity extends Activity  {
         }
         /* parse out intent data */
         final Intent intent = getIntent();
-        if (null == intent.getData()) {
-            mRoomName       = intent.getStringExtra(INTENT_ROOM_NAME);
-            mUsername       = intent.getStringExtra(INTENT_USER_NAME);
-            mApiKey         = intent.getStringExtra(INTENT_APIKEY);
-            mSessionId      = intent.getStringExtra(INTENT_SESSION_ID);
-            mSessionToken   = intent.getStringExtra(INTENT_SESSION_TOKEN);
-            mCapturerRes    = RESOLUTION_TBL.get(intent.getStringExtra(INTENT_CAP_RESOLUTION));
-            mCapturerFps    = FRAMERATE_TBL.get(intent.getStringExtra(INTENT_CAP_FPS));
-            /* update UI to reflect information received */
-            ((TextView)findViewById(R.id.title)).setText(mRoomName);
-            /* setup room */
-            mRoom = new Room(this, mSessionId, mSessionToken, mApiKey, mUsername);
-            mRoom.setPreviewView(mPreview);
-            mRoom.setParticipantsViewContainer(mParticipantsView, mLastParticipantView, null);
-            mRoom.connect();
-        } else {
-            /* fetch api key/session Id/aession Token from server */
-            AsyncTask<String, Void, Exception> fetchRoomData = new AsyncTask<String, Void, Exception>() {
-                private ProgressDialog mDialog;
-                private String _fetchRoomInfo(String room) throws IOException, NullPointerException {
-                    URL url = new URL(getResources().getString(R.string.serverURL) + room);
-                    HttpURLConnection cxn = (HttpURLConnection)url.openConnection();
-                    cxn.setRequestMethod("GET");
-                    cxn.setRequestProperty("Accept", "application/json, text/plain, */*");
-                    cxn.connect();
-                    return IOUtils.toString(cxn.getInputStream());
-                }
-
-                @Override
-                protected void onPreExecute() {
-                    /* throw up connecting dialog */
-                    mDialog = new ProgressDialog(ChatRoomActivity.this);
-                    mDialog.setTitle("Joining Room...");
-                    mDialog.setMessage("Please wait.");
-                    mDialog.setCancelable(false);
-                    mDialog.setIndeterminate(true);
-                    mDialog.show();
-                }
-                @Override
-                protected Exception doInBackground(String... params) {
-                    try {
-                        JSONObject response = new JSONObject(_fetchRoomInfo(params[0]));
-                        mRoomName = (intent.getData().getScheme().equals("otmeet"))
-                                ? intent.getData().getHost()
-                                : intent.getData().getPathSegments().get(0);
-                        mUsername       = "";
-                        mApiKey         = response.getString("apiKey");
-                        mSessionId      = response.getString("sessionId");
-                        mSessionToken   = response.getString("token");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        return e;
-                    }
-                    return null;
-                }
-
-                @Override
-                protected void onPostExecute(final Exception e) {
-                    mDialog.dismiss();
-                    if (null == e) {
-                        mRoom = new Room(
-                                ChatRoomActivity.this,
-                                mSessionId,
-                                mSessionToken,
-                                mApiKey,
-                                mUsername
-                        );
-                        mRoom.setPreviewView(mPreview);
-                        mRoom.setParticipantsViewContainer(
-                                mParticipantsView,
-                                mLastParticipantView,
-                                null
-                        );
-                        mRoom.connect();
-                    } else {
-                        (new AlertDialog.Builder(ChatRoomActivity.this))
-                                .setTitle(R.string.error_title)
-                                .setMessage(R.string.error)
-                                .setCancelable(false)
-                                .setPositiveButton(
-                                        "OK",
-                                        new DialogInterface.OnClickListener() {
-                                            public void onClick(DialogInterface dialog, int id) {
-                                                finish();
-                                            }
-                                        }
-                                )
-                                .create()
-                                .show();
-                    }
-                }
-            };
-            fetchRoomData.execute(mRoomName);
-        }
+        mRoomName       = intent.getStringExtra(INTENT_ROOM_NAME);
+        mUsername       = intent.getStringExtra(INTENT_USER_NAME);
+        mApiKey         = intent.getStringExtra(INTENT_APIKEY);
+        mSessionId      = intent.getStringExtra(INTENT_SESSION_ID);
+        mSessionToken   = intent.getStringExtra(INTENT_SESSION_TOKEN);
+        mCapturerRes    = RESOLUTION_TBL.get(intent.getStringExtra(INTENT_CAP_RESOLUTION));
+        mCapturerFps    = FRAMERATE_TBL.get(intent.getStringExtra(INTENT_CAP_FPS));
+        /* update UI to reflect information received */
+        ((TextView)findViewById(R.id.title)).setText(mRoomName);
+        /* setup room */
+        mRoom = new Room(this, mSessionId, mSessionToken, mApiKey, mUsername);
+        mRoom.setPreviewView(mPreview);
+        mRoom.setParticipantsViewContainer(mParticipantsView, mLastParticipantView, null);
+        mRoom.connect();
     }
 
 

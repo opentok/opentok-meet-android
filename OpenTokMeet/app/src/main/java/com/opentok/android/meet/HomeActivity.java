@@ -5,6 +5,7 @@ import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
@@ -80,6 +81,18 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
 
         // restore last used conference settings
         restoreSettings();
+
+        // update info if activity was launched by a url
+        if (null != getIntent().getData()) {
+            Uri url = getIntent().getData();
+            if (url.getScheme().equals("otmeet")) {
+                mRoomName = url.getHost();
+            } else {
+                mRoomName = url.getPathSegments().get(0);
+            }
+            // update ui
+            ((EditText)findViewById(R.id.input_room_name)).setText(mRoomName);
+        }
     }
 
     public void joinRoom(View v) {

@@ -33,14 +33,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name="com.opentok.android.meet.ChatRoomActivity"
-            android:clearTaskOnLaunch="false"
-            android:configChanges="orientation"
-            android:launchMode="singleTask"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.ConferenceRoom">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -59,6 +51,14 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:host="meet.tokbox.com" android:scheme="https" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name="com.opentok.android.meet.ChatRoomActivity"
+            android:clearTaskOnLaunch="false"
+            android:configChanges="orientation"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.ConferenceRoom">
         </activity>
         <activity
             android:name="com.opentok.android.meet.AdvancedSettingsActivity"
