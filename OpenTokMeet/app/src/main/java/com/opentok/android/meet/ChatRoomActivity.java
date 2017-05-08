@@ -65,6 +65,7 @@ public class ChatRoomActivity extends Activity  {
     public static final String INTENT_CAP_FPS       = "capturer_fps";
     public static final String INTENT_ROOM_NAME     = "room_name";
     public static final String INTENT_USER_NAME     = "user_name";
+    public static final String INTENT_H264          = "h264";
 
     private static final Map<String, Publisher.CameraCaptureResolution> RESOLUTION_TBL =
             new HashMap<String, Publisher.CameraCaptureResolution>() {
@@ -148,6 +149,10 @@ public class ChatRoomActivity extends Activity  {
         mSessionToken   = intent.getStringExtra(INTENT_SESSION_TOKEN);
         mCapturerRes    = RESOLUTION_TBL.get(intent.getStringExtra(INTENT_CAP_RESOLUTION));
         mCapturerFps    = FRAMERATE_TBL.get(intent.getStringExtra(INTENT_CAP_FPS));
+        /* setup use of H264 & WebRTC MediaCodecFactory */
+        OpenTokConfig.setPreferH264Codec(
+                intent.getBooleanExtra(INTENT_H264, false)
+        );
         /* update UI to reflect information received */
         ((TextView)findViewById(R.id.title)).setText(mRoomName);
         /* setup room */
@@ -428,12 +433,12 @@ public class ChatRoomActivity extends Activity  {
         if (null != mRoom) {
             if (mRoom.getPublisher().getPublishAudio()) {
                 ((ImageButton)findViewById(R.id.mute_publisher)).setImageResource(
-                        R.mipmap.unmute_pub
+                        R.mipmap.mute_pub
                 );
                 mRoom.getPublisher().setPublishAudio(false);
             } else {
                 ((ImageButton)findViewById(R.id.mute_publisher)).setImageResource(
-                        R.mipmap.mute_pub
+                        R.mipmap.unmute_pub
                 );
                 mRoom.getPublisher().setPublishAudio(true);
             }

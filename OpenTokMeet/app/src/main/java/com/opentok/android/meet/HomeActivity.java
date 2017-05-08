@@ -163,6 +163,10 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
                             ChatRoomActivity.INTENT_CAP_FPS,
                             mCapturerFps
                     );
+                    mLaunchIntent.putExtra(
+                            ChatRoomActivity.INTENT_H264,
+                            mH264Support
+                    );
                 } catch (Exception e) {
                     e.printStackTrace();
                     return e;
@@ -204,6 +208,8 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         mH264Support= ((Switch)findViewById(R.id.h264Support)).isChecked();
         /* save conference settings */
         saveSettings();
+        /* set debug settings (setup from advanced settings menu) */
+        updatePreferences();
         /* request conference information from server */
         fetchRoomData.execute(mRoomName);
     }
@@ -218,6 +224,14 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         editor.putString(PREF_CAPTURERFPS, mCapturerFps);
         editor.putBoolean(PREF_H264, mH264Support);
         editor.apply();
+    }
+
+    private void updatePreferences() {
+        SharedPreferences settings = this.getSharedPreferences(PREF_TAG_DEBUG, 0);
+        OpenTokConfig.setJNILogs(settings.getBoolean(PREF_JNI_LOG, false));
+        OpenTokConfig.setOTKitLogs(settings.getBoolean(PREF_OTK_LOG, false));
+        OpenTokConfig.setOTKitLogs(settings.getBoolean(PREF_RTC_LOG, false));
+        OpenTokConfig.setUseMediaCodecFactories(settings.getBoolean(PREF_MEDIACODEC, false));
     }
 
     private void restoreSettings() {
@@ -244,12 +258,8 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         );
         /* restore H264 support flag */
         ((Switch)findViewById(R.id.h264Support)).setChecked(mH264Support);
-        /* Debug Settings */
-        settings = this.getSharedPreferences(PREF_TAG_DEBUG, 0);
-        OpenTokConfig.setJNILogs(settings.getBoolean(PREF_JNI_LOG, false));
-        OpenTokConfig.setOTKitLogs(settings.getBoolean(PREF_OTK_LOG, false));
-        OpenTokConfig.setOTKitLogs(settings.getBoolean(PREF_RTC_LOG, false));
-        OpenTokConfig.setUseMediaCodecFactories(settings.getBoolean(PREF_MEDIACODEC, false));
+        /* Debug Preferences */
+        updatePreferences();
     }
 
     @Override
