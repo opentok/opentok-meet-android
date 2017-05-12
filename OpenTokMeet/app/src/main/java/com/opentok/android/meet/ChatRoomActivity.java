@@ -159,6 +159,7 @@ public class ChatRoomActivity extends Activity  {
         mRoom = new Room(this, mSessionId, mSessionToken, mApiKey, mUsername);
         mRoom.setPreviewView(mPreview);
         mRoom.setParticipantsViewContainer(mParticipantsView, mLastParticipantView, null);
+        mRoom.setPublisherSettings(mCapturerRes, mCapturerFps);
         mRoom.connect();
     }
 

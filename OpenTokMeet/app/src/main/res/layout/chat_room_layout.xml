@@ -76,7 +76,7 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
             android:onClick="onPublisherMuteClick"
-            android:src="@mipmap/mute_pub" />
+            android:src="@mipmap/unmute_pub" />
 
         <ImageButton
             android:id="@+id/swap_camera"
