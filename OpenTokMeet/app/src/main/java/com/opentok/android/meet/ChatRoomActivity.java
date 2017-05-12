@@ -5,6 +5,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
@@ -33,10 +36,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 
@@ -52,22 +58,44 @@ public class ChatRoomActivity extends Activity  {
 
     private static final String LOGTAG = ChatRoomActivity.class.getName();
 
-    public static final String ARG_ROOM_ID = "roomId";
-    public static final String ARG_USERNAME_ID = "usernameId";
-    public static final String PUB_CAPTURER_RESOLUTION= "PUB_CAPTURER_RESOLUTION";
-    public static final String PUB_CAPTURER_FPS= "PUB_CAPTURER_FPS";
+    public static final String INTENT_APIKEY        = "api_key";
+    public static final String INTENT_SESSION_ID    = "session_id";
+    public static final String INTENT_SESSION_TOKEN = "session_token";
+    public static final String INTENT_CAP_RESOLUTION= "capturer_resolution";
+    public static final String INTENT_CAP_FPS       = "capturer_fps";
+    public static final String INTENT_ROOM_NAME     = "room_name";
+    public static final String INTENT_USER_NAME     = "user_name";
+    public static final String INTENT_H264          = "h264";
 
-    private String serverURL = null;
+    private static final Map<String, Publisher.CameraCaptureResolution> RESOLUTION_TBL =
+            new HashMap<String, Publisher.CameraCaptureResolution>() {
+        {
+            put("Low", Publisher.CameraCaptureResolution.LOW);
+            put("Medium", Publisher.CameraCaptureResolution.MEDIUM);
+            put("High", Publisher.CameraCaptureResolution.HIGH);
+        }
+    };
+
+    private static final Map<String, Publisher.CameraCaptureFrameRate> FRAMERATE_TBL =
+            new HashMap<String, Publisher.CameraCaptureFrameRate>() {
+        {
+            put("1", Publisher.CameraCaptureFrameRate.FPS_1);
+            put("7", Publisher.CameraCaptureFrameRate.FPS_7);
+            put("15", Publisher.CameraCaptureFrameRate.FPS_15);
+            put("30", Publisher.CameraCaptureFrameRate.FPS_30);
+        }
+    };
+
     private String mRoomName;
-    private Room mRoom;
-    private String mUsername = null;
+    private String mUsername;
+    private String mApiKey;
+    private String mSessionId;
+    private String mSessionToken;
+    private Publisher.CameraCaptureResolution mCapturerRes = Publisher.CameraCaptureResolution.MEDIUM;
+    private Publisher.CameraCaptureFrameRate  mCapturerFps = Publisher.CameraCaptureFrameRate.FPS_30;
 
-    private Publisher.CameraCaptureResolution mCapturerResolutionPub = Publisher.CameraCaptureResolution.MEDIUM;
-    private Publisher.CameraCaptureFrameRate mCapturerFpsPub = Publisher.CameraCaptureFrameRate.FPS_30;
+    private Room    mRoom;
 
-    private ProgressDialog mConnectingDialog;
-
-    private Handler mHandler = new Handler();
     private NotificationCompat.Builder mNotifyBuilder;
     private NotificationManager mNotificationManager;
     private ServiceConnection mConnection;
@@ -81,21 +109,27 @@ public class ChatRoomActivity extends Activity  {
     private String subsInfoStats = "SubInfoStat ";
     private String pubInfoStats;
 
-    public ArrayList<String> statsInfo = new ArrayList<>() ;
+    public ArrayList<String> statsInfo = new ArrayList<String>() {
+        {
+            add("CPU info stats are not available");
+            add("Memory info stats are not available");
+            add("Battery info stats are not available");
+        }
+    };
+
     private   ProgressDialog dialog;
 
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
+        mNotificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        /* setup UI */
         setContentView(R.layout.chat_room_layout);
-
-        // customize title bar (Lint warns if actionbar is null although that should never happen)
+        mPreview            = (ViewGroup)findViewById(R.id.publisherview);
+        mParticipantsView   = (LinearLayout)findViewById(R.id.gallery);
+        mLastParticipantView= (ViewGroup)findViewById(R.id.mainsubscriberView);
+        mLoadingSub         = (ProgressBar)findViewById(R.id.loadingSpinner);
+        /* setup action bar */
         if (null != getActionBar()) {
             ActionBar actionBar = getActionBar();
             actionBar.setDisplayShowTitleEnabled(false);
@@ -106,64 +140,29 @@ public class ChatRoomActivity extends Activity  {
             View cView = getLayoutInflater().inflate(R.layout.custom_title, null);
             actionBar.setCustomView(cView);
         }
-
-        mPreview = (ViewGroup) findViewById(R.id.publisherview);
-        mParticipantsView = (LinearLayout) findViewById(R.id.gallery);
-        mLastParticipantView = (ViewGroup) findViewById(R.id.mainsubscriberView);
-        mLoadingSub = (ProgressBar) findViewById(R.id.loadingSpinner);
-
-        Uri url = getIntent().getData();
-        serverURL = getResources().getString(R.string.serverURL);
-
-        if (url == null) {
-            mRoomName = getIntent().getStringExtra(ARG_ROOM_ID);
-            mUsername = getIntent().getStringExtra(ARG_USERNAME_ID);
-        } else {
-            if (url.getScheme().equals("otmeet")) {
-                mRoomName = url.getHost();
-            } else {
-                mRoomName = url.getPathSegments().get(0);
-            }
-        }
-
-        TextView title = (TextView) findViewById(R.id.title);
-        title.setText(mRoomName);
-
-        statsInfo.add("CPU info stats are not available");
-        statsInfo.add("Memory info stats are not available");
-        statsInfo.add("Battery info stats are not available");
-
-        String resolution =  getIntent().getStringExtra(PUB_CAPTURER_RESOLUTION);
-        mCapturerResolutionPub = getPubCapturerResolution(resolution);
-
-        String framerate =  getIntent().getStringExtra(PUB_CAPTURER_FPS);
-        mCapturerFpsPub = getPubCapturerFrameRate(framerate);
-
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        initializeRoom();
+        /* parse out intent data */
+        final Intent intent = getIntent();
+        mRoomName       = intent.getStringExtra(INTENT_ROOM_NAME);
+        mUsername       = intent.getStringExtra(INTENT_USER_NAME);
+        mApiKey         = intent.getStringExtra(INTENT_APIKEY);
+        mSessionId      = intent.getStringExtra(INTENT_SESSION_ID);
+        mSessionToken   = intent.getStringExtra(INTENT_SESSION_TOKEN);
+        mCapturerRes    = RESOLUTION_TBL.get(intent.getStringExtra(INTENT_CAP_RESOLUTION));
+        mCapturerFps    = FRAMERATE_TBL.get(intent.getStringExtra(INTENT_CAP_FPS));
+        /* setup use of H264 & WebRTC MediaCodecFactory */
+        OpenTokConfig.setPreferH264Codec(
+                intent.getBooleanExtra(INTENT_H264, false)
+        );
+        /* update UI to reflect information received */
+        ((TextView)findViewById(R.id.title)).setText(mRoomName);
+        /* setup room */
+        mRoom = new Room(this, mSessionId, mSessionToken, mApiKey, mUsername);
+        mRoom.setPreviewView(mPreview);
+        mRoom.setParticipantsViewContainer(mParticipantsView, mLastParticipantView, null);
+        mRoom.setPublisherSettings(mCapturerRes, mCapturerFps);
+        mRoom.connect();
     }
 
-    private Publisher.CameraCaptureResolution getPubCapturerResolution(String resolution) {
-        if (resolution.contains("Low")) {
-            return Publisher.CameraCaptureResolution.LOW;
-        } else if (resolution.contains("Medium")) {
-            return Publisher.CameraCaptureResolution.MEDIUM;
-        } else {
-            return Publisher.CameraCaptureResolution.HIGH;
-        }
-    }
-
-    private Publisher.CameraCaptureFrameRate getPubCapturerFrameRate(String fps) {
-        if (fps.contains("FPS_1")) {
-            return Publisher.CameraCaptureFrameRate.FPS_1;
-        } else if (fps.contains("FPS_7")) {
-            return Publisher.CameraCaptureFrameRate.FPS_7;
-        } else if (fps.contains("FPS_15")) {
-            return Publisher.CameraCaptureFrameRate.FPS_15;
-        } else {
-            return Publisher.CameraCaptureFrameRate.FPS_30;
-        }
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -180,7 +179,7 @@ public class ChatRoomActivity extends Activity  {
     public void onPause() {
         super.onPause();
 
-        //Pause implies go to audio only mode
+        // Pause implies go to audio only mode
         if (mRoom != null) {
             mRoom.onPause();
         }
@@ -192,9 +191,10 @@ public class ChatRoomActivity extends Activity  {
                 .setSmallIcon(R.mipmap.ic_launcher).setOngoing(true);
 
         Intent notificationIntent = new Intent(this, ChatRoomActivity.class);
-        notificationIntent
-                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        notificationIntent.putExtra(ChatRoomActivity.ARG_ROOM_ID, mRoomName);
+        notificationIntent.setFlags(
+                Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
+        notificationIntent.putExtra(ChatRoomActivity.INTENT_ROOM_NAME, mRoomName);
         PendingIntent intent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         mNotifyBuilder.setContentIntent(intent);
 
@@ -273,99 +273,14 @@ public class ChatRoomActivity extends Activity  {
         super.onDestroy();
     }
 
-    private void initializeRoom() {
-        Log.i(LOGTAG, "initializing chat room fragment for room: " + mRoomName);
-        setTitle(mRoomName);
-
-        //Show connecting dialog
-        mConnectingDialog = new ProgressDialog(this);
-        mConnectingDialog.setTitle("Joining Room...");
-        mConnectingDialog.setMessage("Please wait.");
-        mConnectingDialog.setCancelable(false);
-        mConnectingDialog.setIndeterminate(true);
-        mConnectingDialog.show();
-
-        GetRoomDataTask task = new GetRoomDataTask();
-        task.execute(mRoomName, mUsername);
-    }
-
-    private class GetRoomDataTask extends AsyncTask<String, Void, Room> {
-
-        private String getRoomDetails(String room) throws IOException {
-            URL url = new URL(getResources().getString(R.string.serverURL) + room);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Accept", "application/json, text/plain, */*");
-            connection.connect();
-            InputStream inputStream = connection.getInputStream();
-            try {
-                return IOUtils.toString(inputStream);
-            } catch (NullPointerException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        @Override
-        protected Room doInBackground(String... params) {
-            try {
-                JSONObject  roomJson    = new JSONObject(getRoomDetails(params[0]));
-                String      sessionId   = roomJson.getString("sessionId");
-                String      token       = roomJson.getString("token");
-                String      apiKey      = roomJson.getString("apiKey");
-                return new Room(ChatRoomActivity.this, sessionId, token, apiKey, params[1]);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(final Room room) {
-            mConnectingDialog.dismiss();
-            if (room != null) {
-                mRoom = room;
-                mRoom.setPreviewView(mPreview);
-                mRoom.setParticipantsViewContainer(mParticipantsView, mLastParticipantView, null);
-                mRoom.connect();
-            } else {
-                mConnectingDialog = null;
-                showErrorDialog();
-            }
-        }
-    }
-
-    private DialogInterface.OnClickListener errorListener = new DialogInterface.OnClickListener() {
-        public void onClick(DialogInterface dialog, int id) {
-            finish();
-        }
-    };
-
-    private void showErrorDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.error_title);
-        builder.setMessage(R.string.error);
-        builder.setCancelable(false);
-        builder.setPositiveButton("OK", errorListener);
-        builder.create().show();
-    }
-
     public void onClickShareLink(View v) {
-        String roomUrl = serverURL + mRoomName;
+        String roomUrl = getResources().getString(R.string.serverURL) + mRoomName;
         String text = getString(R.string.sharingLink) + " " + roomUrl;
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_TEXT, text);
         sendIntent.setType("text/plain");
         startActivity(sendIntent);
-    }
-
-    public Room getRoom() {
-        return mRoom;
-    }
-
-    public Handler getHandler() {
-        return this.mHandler;
     }
 
     public void updateLoadingSub() {
@@ -487,14 +402,6 @@ public class ChatRoomActivity extends Activity  {
                     .show();
     }
 
-    public Publisher.CameraCaptureResolution getCapturerResolutionPub() {
-        return mCapturerResolutionPub;
-    }
-
-    public Publisher.CameraCaptureFrameRate getCapturerFpsPub() {
-        return mCapturerFpsPub;
-    }
-
     public void showReconnectingDialog(boolean show){
         if (show) {
             dialog = new ProgressDialog(this);
@@ -503,14 +410,39 @@ public class ChatRoomActivity extends Activity  {
             dialog.setIndeterminate(true);
             dialog.setCanceledOnTouchOutside(false);
             dialog.show();
-        }
-        else {
+        } else {
             dialog.dismiss();
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("Session has been reconnected")
                     .setPositiveButton(android.R.string.ok, null);
             builder.create();
             builder.show();
+        }
+    }
+
+    public void onCameraSwapClick(View view) {
+        if (null != mRoom) {
+            mRoom.getPublisher().cycleCamera();
+        }
+    }
+
+    public void onEndCallClick(View view) {
+        finish();
+    }
+
+    public void onPublisherMuteClick(View view) {
+        if (null != mRoom) {
+            if (mRoom.getPublisher().getPublishAudio()) {
+                ((ImageButton)findViewById(R.id.mute_publisher)).setImageResource(
+                        R.mipmap.mute_pub
+                );
+                mRoom.getPublisher().setPublishAudio(false);
+            } else {
+                ((ImageButton)findViewById(R.id.mute_publisher)).setImageResource(
+                        R.mipmap.unmute_pub
+                );
+                mRoom.getPublisher().setPublishAudio(true);
+            }
         }
     }
 

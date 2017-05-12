@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/chat_room_layout"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical"
-    style="@style/AppTheme.background" >
-
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".ChatRoomActivity">
     <RelativeLayout
         android:id="@+id/publisherview"
         android:layout_width="128dp"
         android:layout_height="96dp"
         android:background="@mipmap/publisher"
-        android:layout_marginTop="20dp"
         android:layout_marginRight="20dp"
         android:layout_marginEnd="20dp"
         android:layout_alignParentRight="true"
@@ -25,7 +26,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/publisherview">
-
         <RelativeLayout
             android:id="@+id/mainsubscriberView"
             android:layout_width="340dp"
@@ -48,23 +48,57 @@
         <HorizontalScrollView
             android:id="@+id/subscribersListView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
-            android:layout_below="@+id/mainsubscriberView"
-            android:fillViewport="true">
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/mainsubscriberView">
 
             <LinearLayout
                 android:id="@+id/gallery"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="20dip"
-                android:layout_marginRight="20dip"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
                 android:layout_marginTop="15dp"
+                android:orientation="horizontal"
                 android:smoothScrollbar="true"
-                android:spacing="20dip"
-                android:orientation="horizontal">
-            </LinearLayout>
+                android:spacing="20dip" />
         </HorizontalScrollView>
-
     </RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/publisherControls"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_alignParentBottom="true">
+
+        <ImageButton
+            android:id="@+id/mute_publisher"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:onClick="onPublisherMuteClick"
+            android:src="@mipmap/unmute_pub" />
+
+        <ImageButton
+            android:id="@+id/swap_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:onClick="onCameraSwapClick"
+            android:src="@mipmap/camera" />
+
+        <Button
+            android:id="@+id/endCallButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@+id/mute_publisher"
+            android:layout_toRightOf="@+id/swap_camera"
+            android:layout_toStartOf="@+id/swap_camera"
+            android:onClick="onEndCallClick"
+            android:textColor="@color/white"
+            android:text="@string/endCall1" />
+    </RelativeLayout>
+
 </RelativeLayout>
