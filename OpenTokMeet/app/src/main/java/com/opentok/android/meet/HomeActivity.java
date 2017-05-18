@@ -222,10 +222,12 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
             if (!mRoomName.isEmpty()) {
             /* request conference information from server */
                 fetchRoomData.execute(mRoomName);
+            } else { 
+                (Toast.makeText(this, "Room name must be specified", Toast.LENGTH_LONG)).show();
             }
         }
         catch (Exception e){
-            (Toast.makeText(this, "Room name must be specified", Toast.LENGTH_LONG)).show();
+            e.printStackTrace();
         }
     }
 
