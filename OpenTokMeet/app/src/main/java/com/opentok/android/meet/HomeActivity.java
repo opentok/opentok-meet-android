@@ -204,18 +204,18 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
             }
         };
         try {
-        /* update values from ui */
+            /* update values from ui */
             mRoomName = ((EditText) findViewById(R.id.input_room_name)).getText().toString();
             mUsername = ((EditText) findViewById(R.id.input_username)).getText().toString();
             mH264Support = ((Switch) findViewById(R.id.h264Support)).isChecked();
-        /* save conference settings */
+            /* save conference settings */
             saveSettings();
-        /* set debug settings (setup from advanced settings menu) */
+            /* set debug settings (setup from advanced settings menu) */
             updatePreferences();
 
             //Replace all leading spaces
             mRoomName = mRoomName.replaceAll("^\\s+", "");
-        /* make sure there is a room name defined */
+            /* make sure there is a room name defined */
             mRoomName = encodeSpecialCharacters(mRoomName);
 
 
@@ -227,7 +227,7 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
             }
         }
         catch (Exception e){
-            e.printStackTrace();
+            (Toast.makeText(this, "Invalid String Cannot be Encoded to URL", Toast.LENGTH_LONG)).show();
         }
     }
 
