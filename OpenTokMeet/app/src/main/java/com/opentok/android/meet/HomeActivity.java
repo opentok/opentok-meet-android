@@ -210,6 +210,17 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         saveSettings();
         /* set debug settings (setup from advanced settings menu) */
         updatePreferences();
+
+        //Remove all leading spaces, equivalent to how web app works
+        mRoomName = mRoomName.replaceAll("^\\s+", "");
+        // Convert the remaining string to match web standard
+        try {
+            mRoomName = encodeSpecialCharacters(mRoomName);
+        }
+        catch (Exception e){
+            System.err.println("Caught Encoding Exception: " + e.getMessage());
+        }
+
         /* make sure there is a room name defined */
         if (!mRoomName.isEmpty()) {
             /* request conference information from server */
@@ -217,6 +228,13 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         } else {
             (Toast.makeText(this, "Room name must be specified", Toast.LENGTH_LONG)).show();
         }
+    }
+
+    // Convert remaining string to Web supported UTF-8 with space replaced by %20
+    // Matches behavior on webbrowser implementation.
+    public String encodeSpecialCharacters (String s) throws UnsupportedEncodingException {
+        String temp = URLEncoder.encode(s, "UTF-8").replace("+", "%20");
+        return temp;
     }
 
     private void saveSettings() {
