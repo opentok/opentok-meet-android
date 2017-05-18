@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
+import java.io.UnsupportedEncodingException;
 
 public class HomeActivity extends Activity implements AdapterView.OnItemSelectedListener {
     private static final String LOGTAG = "meet.tokbox";
