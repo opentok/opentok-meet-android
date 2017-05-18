@@ -203,30 +203,28 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
                 }
             }
         };
-        /* update values from ui */
-        mRoomName   = ((EditText)findViewById(R.id.input_room_name)).getText().toString();
-        mUsername   = ((EditText)findViewById(R.id.input_username)).getText().toString();
-        mH264Support= ((Switch)findViewById(R.id.h264Support)).isChecked();
-        /* save conference settings */
-        saveSettings();
-        /* set debug settings (setup from advanced settings menu) */
-        updatePreferences();
-
-        //Remove all leading spaces, equivalent to how web app works
-        mRoomName = mRoomName.replaceAll("^\\s+", "");
-        // Convert the remaining string to match web standard
         try {
+        /* update values from ui */
+            mRoomName = ((EditText) findViewById(R.id.input_room_name)).getText().toString();
+            mUsername = ((EditText) findViewById(R.id.input_username)).getText().toString();
+            mH264Support = ((Switch) findViewById(R.id.h264Support)).isChecked();
+        /* save conference settings */
+            saveSettings();
+        /* set debug settings (setup from advanced settings menu) */
+            updatePreferences();
+
+            //Replace all leading spaces
+            mRoomName = mRoomName.replaceAll("^\\s+", "");
+        /* make sure there is a room name defined */
             mRoomName = encodeSpecialCharacters(mRoomName);
+
+
+            if (!mRoomName.isEmpty()) {
+            /* request conference information from server */
+                fetchRoomData.execute(mRoomName);
+            }
         }
         catch (Exception e){
-            System.err.println("Caught Encoding Exception: " + e.getMessage());
-        }
-
-        /* make sure there is a room name defined */
-        if (!mRoomName.isEmpty()) {
-            /* request conference information from server */
-            fetchRoomData.execute(mRoomName);
-        } else {
             (Toast.makeText(this, "Room name must be specified", Toast.LENGTH_LONG)).show();
         }
     }
