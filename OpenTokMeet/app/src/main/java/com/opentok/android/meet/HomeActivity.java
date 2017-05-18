@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
+import java.io.UnsupportedEncodingException;
 
 public class HomeActivity extends Activity implements AdapterView.OnItemSelectedListener {
     private static final String LOGTAG = "meet.tokbox";
@@ -202,21 +203,39 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
                 }
             }
         };
-        /* update values from ui */
-        mRoomName   = ((EditText)findViewById(R.id.input_room_name)).getText().toString();
-        mUsername   = ((EditText)findViewById(R.id.input_username)).getText().toString();
-        mH264Support= ((Switch)findViewById(R.id.h264Support)).isChecked();
-        /* save conference settings */
-        saveSettings();
-        /* set debug settings (setup from advanced settings menu) */
-        updatePreferences();
-        /* make sure there is a room name defined */
-        if (!mRoomName.isEmpty()) {
+        try {
+            /* update values from ui */
+            mRoomName = ((EditText) findViewById(R.id.input_room_name)).getText().toString();
+            mUsername = ((EditText) findViewById(R.id.input_username)).getText().toString();
+            mH264Support = ((Switch) findViewById(R.id.h264Support)).isChecked();
+            /* save conference settings */
+            saveSettings();
+            /* set debug settings (setup from advanced settings menu) */
+            updatePreferences();
+
+            //Replace all leading spaces
+            mRoomName = mRoomName.replaceAll("^\\s+", "");
+            /* make sure there is a room name defined */
+            mRoomName = encodeSpecialCharacters(mRoomName);
+
+
+            if (!mRoomName.isEmpty()) {
             /* request conference information from server */
-            fetchRoomData.execute(mRoomName);
-        } else {
-            (Toast.makeText(this, "Room name must be specified", Toast.LENGTH_LONG)).show();
+                fetchRoomData.execute(mRoomName);
+            } else { 
+                (Toast.makeText(this, "Room name must be specified", Toast.LENGTH_LONG)).show();
+            }
         }
+        catch (Exception e){
+            (Toast.makeText(this, "Invalid String Cannot be Encoded to URL", Toast.LENGTH_LONG)).show();
+        }
+    }
+
+    // Convert remaining string to Web supported UTF-8 with space replaced by %20
+    // Matches behavior on webbrowser implementation.
+    public String encodeSpecialCharacters (String s) throws UnsupportedEncodingException {
+        String temp = URLEncoder.encode(s, "UTF-8").replace("+", "%20");
+        return temp;
     }
 
     private void saveSettings() {
