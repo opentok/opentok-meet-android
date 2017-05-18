@@ -210,8 +210,13 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         saveSettings();
         /* set debug settings (setup from advanced settings menu) */
         updatePreferences();
-        /* request conference information from server */
-        fetchRoomData.execute(mRoomName);
+        /* make sure there is a room name defined */
+        if (!mRoomName.isEmpty()) {
+            /* request conference information from server */
+            fetchRoomData.execute(mRoomName);
+        } else {
+            (Toast.makeText(this, "Room name must be specified", Toast.LENGTH_LONG)).show();
+        }
     }
 
     private void saveSettings() {
