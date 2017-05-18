@@ -211,7 +211,9 @@ public class HomeActivity extends Activity implements AdapterView.OnItemSelected
         /* set debug settings (setup from advanced settings menu) */
         updatePreferences();
         /* make sure there is a room name defined */
-        if (!mRoomName.isEmpty()) {
+        // In case there is an empty String
+        String temp = mRoomName.replaceAll("\\s+", "");
+        if (!mRoomName.isEmpty() && !temp.isEmpty()) {
             /* request conference information from server */
             fetchRoomData.execute(mRoomName);
         } else {
